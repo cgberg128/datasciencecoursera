@@ -82,29 +82,44 @@ activity_label_and_desc <- sqldf("select a.V1 as activity_label,
 
 activity_desc <- activity_label_and_desc$activity_desc
 
-tidy_df_1 <- cbind(main_filtered,subject_combined,activity_desc) %>%
-  mutate(activity_desc = as.character(activity_desc))
+subj_act_comb <- paste(subject_combined$subject_label,activity_desc,sep="-")
+
+tidy_df_1 <- cbind(subj_act_comb,subject_combined,activity_desc,main_filtered) %>%
+  mutate(activity_desc = as.character(activity_desc),
+         subj_act_comb = as.character(subj_act_comb))
 
 dim(tidy_df_1)
+glimpse(tidy_df_1)
 #Checking the dimensions of our first tidy dataset
 #Contains one variable per column and one observation of each variable in a different row
 #Not yet summarized by subject and activity
+#Each row contains various measurements for a given subject and activity (i.e. subj_act_comb, which is first column)
 
 #Now we just need to create another tidy dataset with the average of each variable
 #for each activity and each subject
 
 tidy_df_2 <- tidy_df_1 %>%
+  select(-subj_act_comb) %>% #Can't take the average of this variable (a character variable).  We will re-create after summarizing.
   group_by(subject_label,activity_desc) %>%
-  summarise_each(funs(mean))
+  summarise_each(funs(mean)) %>%
+  arrange(subject_label)
 #Summarise_each function in dplyr allows us to quickly calculate the means of every column
 #for whatever we group by (in this case, subject and activity)
 
+subj_act_comb <- paste(tidy_df_2$subject_label,tidy_df_2$activity_desc,sep="-")
+
+tidy_df_2 <- cbind(subj_act_comb,tidy_df_2) %>% 
+      mutate(subj_act_comb = as.character(subj_act_comb))
+
 dim(tidy_df_2)
+glimpse(tidy_df_2)
+#Checking dimensins of our final tidy dataset
+#And taking a look at the variables
 
 write.table(tidy_df_2,"tidy_df_2.txt",row.names=FALSE)
 #Finally, writing our second tidy dataset to a .txt file
 #Contains average of all variables from our first dataset
 #for each subject/activity combination
 
-glimpse(tidy_df_2)
+
 
